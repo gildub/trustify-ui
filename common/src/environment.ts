@@ -63,7 +63,7 @@ export const buildTrustificationEnv = ({
   MOCK = "off",
 
   OIDC_SERVER_URL,
-  AUTH_REQUIRED = "true",
+  AUTH_REQUIRED = "false",
   OIDC_CLIENT_ID,
   OIDC_SCOPE,
 
