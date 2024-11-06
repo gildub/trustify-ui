@@ -1,14 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 
-import { AdvisoryIndex, HubRequestParams } from "@app/api/models";
+import { HubRequestParams } from "@app/api/models";
+import { client } from "@app/axios-config/apiInit";
 import {
-  getAdvisories,
-  getAdvisoryById,
-  getAdvisorySourceById,
+  AdvisoryDetails,
+  AdvisorySummary,
+  deleteAdvisory,
+  downloadAdvisory,
+  getAdvisory,
+  listAdvisories,
   updateAdvisoryLabels,
-  uploadAdvisory,
-} from "@app/api/rest";
+} from "@app/client";
+
+import { uploadAdvisory } from "@app/api/rest";
+import { requestParamsQuery } from "@app/hooks/table-controls";
 import { useUpload } from "@app/hooks/useUpload";
 
 export interface IAdvisoriesQueryParams {
@@ -26,41 +32,59 @@ export const useFetchAdvisories = (
 ) => {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: [AdvisoriesQueryKey, params],
-    queryFn: () => getAdvisories(params),
+    queryFn: () => {
+      return listAdvisories({
+        client,
+        query: { ...requestParamsQuery(params) },
+      });
+    },
     refetchInterval: !refetchDisabled ? 5000 : false,
   });
   return {
     result: {
-      data: data?.data || [],
-      total: data?.total ?? 0,
-      params: data?.params ?? params,
+      data: data?.data?.items || [],
+      total: data?.data?.total ?? 0,
+      params: params ?? params,
     },
     isFetching: isLoading,
-    fetchError: error,
+    fetchError: error ? (error as AxiosError) : null,
     refetch,
   };
 };
 
-export const useFetchAdvisoryById = (id?: number | string) => {
+export const useFetchAdvisoryById = (id: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: [AdvisoriesQueryKey, id],
-    queryFn: () =>
-      id === undefined ? Promise.resolve(undefined) : getAdvisoryById(id),
+    queryFn: () => getAdvisory({ client, path: { key: id } }),
     enabled: id !== undefined,
   });
 
   return {
-    advisory: data,
+    advisory: data?.data,
     isFetching: isLoading,
     fetchError: error as AxiosError,
   };
 };
 
-export const useFetchAdvisorySourceById = (id?: number | string) => {
+export const useDeleteAdvisoryMutation = (
+  onSuccess?: (payload: AdvisoryDetails, id: string) => void,
+  onError?: (err: AxiosError, id: string) => void
+) => {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await deleteAdvisory({ client, path: { key: id } });
+      return response.data as AdvisoryDetails;
+    },
+    mutationKey: [AdvisoriesQueryKey],
+    onSuccess,
+    onError,
+  });
+};
+
+export const useFetchAdvisorySourceById = (id: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: [AdvisoriesQueryKey, id, "source"],
-    queryFn: () =>
-      id === undefined ? Promise.resolve(undefined) : getAdvisorySourceById(id),
+    queryFn: () => downloadAdvisory({ client, path: { key: id } }),
     enabled: id !== undefined,
   });
 
@@ -73,7 +97,7 @@ export const useFetchAdvisorySourceById = (id?: number | string) => {
 
 export const useUploadAdvisory = () => {
   const queryClient = useQueryClient();
-  return useUpload<AdvisoryIndex, { message: string }>({
+  return useUpload<AdvisoryDetails, { message: string }>({
     parallel: true,
     uploadFn: (formData, config) => {
       return uploadAdvisory(formData, config);
@@ -88,11 +112,17 @@ export const useUploadAdvisory = () => {
 
 export const useUpdateAdvisoryLabelsMutation = (
   onSuccess: () => void,
-  onError: (err: AxiosError, payload: AdvisoryIndex) => void
+  onError: (err: AxiosError, payload: AdvisorySummary) => void
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (obj) => updateAdvisoryLabels(obj.uuid, obj.labels ?? {}),
+    mutationFn: (obj) => {
+      return updateAdvisoryLabels({
+        client,
+        path: { id: obj.uuid },
+        body: obj.labels ?? {},
+      });
+    },
     onSuccess: (_res, _payload) => {
       onSuccess();
       queryClient.invalidateQueries({ queryKey: [AdvisoriesQueryKey] });

@@ -2,6 +2,8 @@ import React from "react";
 
 import { ChartDonut } from "@patternfly/react-charts";
 import {
+  Card,
+  CardBody,
   DescriptionList,
   DescriptionListDescription,
   DescriptionListGroup,
@@ -11,41 +13,47 @@ import {
 } from "@patternfly/react-core";
 
 import { compareBySeverityFn, severityList } from "@app/api/model-utils";
-import { SBOM, Severity } from "@app/api/models";
+import { SbomSummary, Severity } from "@app/client";
 import { formatDate } from "@app/utils/utils";
 
 interface InfoProps {
-  sbom: SBOM;
+  sbom: SbomSummary;
 }
 
 export const Overview: React.FC<InfoProps> = ({ sbom }) => {
   return (
-    <Grid hasGutter>
-      <GridItem md={6}>
-        <DescriptionList
-          columnModifier={{
-            default: "2Col",
-          }}
-        >
-          <DescriptionListGroup>
-            <DescriptionListTerm>Name</DescriptionListTerm>
-            <DescriptionListDescription>{sbom.name}</DescriptionListDescription>
-          </DescriptionListGroup>
-          <DescriptionListGroup>
-            <DescriptionListTerm>Author</DescriptionListTerm>
-            <DescriptionListDescription>
-              {sbom.authors}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
-          <DescriptionListGroup>
-            <DescriptionListTerm>Published</DescriptionListTerm>
-            <DescriptionListDescription>
-              {formatDate(sbom.published)}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
-        </DescriptionList>
-      </GridItem>
-    </Grid>
+    <Card>
+      <CardBody>
+        <Grid hasGutter>
+          <GridItem md={6}>
+            <DescriptionList
+              columnModifier={{
+                default: "2Col",
+              }}
+            >
+              <DescriptionListGroup>
+                <DescriptionListTerm>Name</DescriptionListTerm>
+                <DescriptionListDescription>
+                  {sbom.name}
+                </DescriptionListDescription>
+              </DescriptionListGroup>
+              <DescriptionListGroup>
+                <DescriptionListTerm>Author</DescriptionListTerm>
+                <DescriptionListDescription>
+                  {sbom.authors}
+                </DescriptionListDescription>
+              </DescriptionListGroup>
+              <DescriptionListGroup>
+                <DescriptionListTerm>Published</DescriptionListTerm>
+                <DescriptionListDescription>
+                  {formatDate(sbom.published)}
+                </DescriptionListDescription>
+              </DescriptionListGroup>
+            </DescriptionList>
+          </GridItem>
+        </Grid>
+      </CardBody>
+    </Card>
   );
 };
 
@@ -70,7 +78,7 @@ export const CVEsChart: React.FC<CVEsChartProps> = ({ data }) => {
       const result: ChartData = {
         severity: severity as Severity,
         legend: severityProps.name,
-        color: severityProps.shieldIconColor.value,
+        color: severityProps.color.value,
         count: count,
       };
 

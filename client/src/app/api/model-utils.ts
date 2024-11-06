@@ -1,3 +1,4 @@
+import { ProgressProps } from "@patternfly/react-core";
 import {
   global_palette_purple_400 as criticalColor,
   global_danger_color_100 as importantColor,
@@ -6,14 +7,12 @@ import {
   global_palette_black_400 as noneColor,
 } from "@patternfly/react-tokens";
 
-import { ProgressProps } from "@patternfly/react-core";
-
-import { Severity } from "./models";
+import { Severity } from "@app/client";
 
 type ListType = {
   [key in Severity]: {
     name: string;
-    shieldIconColor: { name: string; value: string; var: string };
+    color: { name: string; value: string; var: string };
     progressProps: Pick<ProgressProps, "variant">;
   };
 };
@@ -21,32 +20,32 @@ type ListType = {
 export const severityList: ListType = {
   none: {
     name: "None",
-    shieldIconColor: noneColor,
+    color: noneColor,
     progressProps: { variant: undefined },
   },
   low: {
     name: "Low",
-    shieldIconColor: lowColor,
+    color: lowColor,
     progressProps: { variant: undefined },
   },
   medium: {
     name: "Medium",
-    shieldIconColor: moderateColor,
+    color: moderateColor,
     progressProps: { variant: "warning" },
   },
   high: {
     name: "High",
-    shieldIconColor: importantColor,
+    color: importantColor,
     progressProps: { variant: "danger" },
   },
   critical: {
     name: "Critical",
-    shieldIconColor: criticalColor,
+    color: criticalColor,
     progressProps: { variant: "danger" },
   },
 };
 
-const getSeverityPriority = (val: Severity) => {
+export const getSeverityPriority = (val: Severity) => {
   switch (val) {
     case "low":
       return 1;

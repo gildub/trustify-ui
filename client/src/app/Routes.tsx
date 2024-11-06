@@ -6,10 +6,6 @@ import { Bullseye, Spinner } from "@patternfly/react-core";
 import { ErrorFallback } from "./components/ErrorFallback";
 
 const Home = lazy(() => import("./pages/home"));
-const ProductList = lazy(() => import("./pages/product-list"));
-const ProductDetails = lazy(() => import("./pages/product-details"));
-const AdvisoryList = lazy(() => import("./pages/advisory-list"));
-const AdvisoryDetails = lazy(() => import("./pages/advisory-details"));
 const VulnerabilityList = lazy(() => import("./pages/vulnerability-list"));
 const VulnerabilityDetails = lazy(
   () => import("./pages/vulnerability-details")
@@ -18,7 +14,10 @@ const PackageList = lazy(() => import("./pages/package-list"));
 const PackageDetails = lazy(() => import("./pages/package-details"));
 const SBOMList = lazy(() => import("./pages/sbom-list"));
 const SBOMDetails = lazy(() => import("./pages/sbom-details"));
+const AdvisoryList = lazy(() => import("./pages/advisory-list"));
+const Search = lazy(() => import("./pages/search"));
 const ImporterList = lazy(() => import("./pages/importer-list"));
+const Upload = lazy(() => import("./pages/upload"));
 
 export enum PathParam {
   PRODUCT_ID = "productId",
@@ -32,16 +31,6 @@ export enum PathParam {
 export const AppRoutes = () => {
   const allRoutes = useRoutes([
     { path: "/", element: <Home /> },
-    { path: "/products", element: <ProductList /> },
-    {
-      path: `/products/:${PathParam.PRODUCT_ID}`,
-      element: <ProductDetails />,
-    },
-    { path: "/advisories", element: <AdvisoryList /> },
-    {
-      path: `/advisories/:${PathParam.ADVISORY_ID}`,
-      element: <AdvisoryDetails />,
-    },
     { path: "/vulnerabilities", element: <VulnerabilityList /> },
     {
       path: `/vulnerabilities/:${PathParam.VULNERABILITY_ID}`,
@@ -52,15 +41,18 @@ export const AppRoutes = () => {
       path: `/packages/:${PathParam.PACKAGE_ID}`,
       element: <PackageDetails />,
     },
+    { path: "/search", element: <Search /> },
     { path: "/sboms", element: <SBOMList /> },
     {
       path: `/sboms/:${PathParam.SBOM_ID}`,
       element: <SBOMDetails />,
     },
+    { path: "/advisories", element: <AdvisoryList /> },
     {
       path: `/importers`,
       element: <ImporterList />,
     },
+    { path: "/upload", element: <Upload /> },
   ]);
 
   return (
@@ -80,5 +72,11 @@ export const AppRoutes = () => {
 
 export const useRouteParams = (pathParam: PathParam) => {
   const params = useParams();
-  return params[pathParam];
+  let value = params[pathParam];
+  if (value === undefined) {
+    throw new Error(
+      `ASSERTION FAILURE: required path parameter not set: ${pathParam}`
+    );
+  }
+  return value;
 };

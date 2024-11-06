@@ -4,7 +4,7 @@ import { Flex, FlexItem, Tooltip } from "@patternfly/react-core";
 import ShieldIcon from "@patternfly/react-icons/dist/esm/icons/shield-alt-icon";
 
 import { severityList } from "@app/api/model-utils";
-import { Severity } from "@app/api/models";
+import { Severity } from "@app/client";
 
 interface SeverityShieldAndTextProps {
   value: Severity;
@@ -28,10 +28,10 @@ export const SeverityShieldAndText: React.FC<SeverityShieldAndTextProps> = ({
       <FlexItem>
         {hideLabel ? (
           <Tooltip content={label}>
-            <ShieldIcon color={severityProps.shieldIconColor.value} />
+            <ShieldIcon color={severityProps.color.value} />
           </Tooltip>
         ) : (
-          <ShieldIcon color={severityProps.shieldIconColor.value} />
+          <ShieldIcon color={severityProps.color.value} />
         )}
       </FlexItem>
       {!hideLabel && <FlexItem>{label}</FlexItem>}

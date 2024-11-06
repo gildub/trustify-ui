@@ -26,12 +26,12 @@ export const SidebarApp: React.FC = () => {
           </li>
           <li className="pf-v5-c-nav__item">
             <NavLink
-              to="/products"
+              to="/search"
               className={({ isActive }) => {
                 return css(LINK_CLASS, isActive ? ACTIVE_LINK_CLASS : "");
               }}
             >
-              Products
+              Search
             </NavLink>
           </li>
           <li className="pf-v5-c-nav__item">
@@ -82,6 +82,16 @@ export const SidebarApp: React.FC = () => {
               }}
             >
               Importers
+            </NavLink>
+          </li>
+          <li className="pf-v5-c-nav__item">
+            <NavLink
+              to="/upload"
+              className={({ isActive }) => {
+                return css(LINK_CLASS, isActive ? ACTIVE_LINK_CLASS : "");
+              }}
+            >
+              Upload
             </NavLink>
           </li>
         </NavList>
