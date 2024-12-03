@@ -4,7 +4,7 @@ import { Label, Skeleton } from "@patternfly/react-core";
 
 import { LoadingWrapper } from "@app/components/LoadingWrapper";
 import { VulnerabilityGallery } from "@app/components/VulnerabilityGallery";
-import { usePackageVulnerabilities } from "@app/hooks/domain-controls/usePackageVulnerabilities";
+import { useVulnerabilitiesOfPackage } from "@app/hooks/domain-controls/useVulnerabilitiesOfPackage";
 
 interface PackageVulnerabilitiesProps {
   packageId: string;
@@ -14,7 +14,7 @@ export const PackageVulnerabilities: React.FC<PackageVulnerabilitiesProps> = ({
   packageId,
 }) => {
   const { summary, isFetching, fetchError } =
-    usePackageVulnerabilities(packageId);
+    useVulnerabilitiesOfPackage(packageId);
 
   return (
     <LoadingWrapper

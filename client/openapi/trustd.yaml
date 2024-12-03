@@ -5,7 +5,7 @@ info:
   license:
     name: Apache License, Version 2.0
     identifier: Apache-2.0
-  version: 0.1.0-alpha.21
+  version: 0.1.0-alpha.26
 paths:
   /.well-known/trustify:
     get:
@@ -1798,6 +1798,97 @@ paths:
                 format: binary
         '404':
           description: The document could not be found
+  /api/v1/userPreference/{key}:
+    get:
+      tags:
+      - userPreferences
+      summary: Get user preferences
+      operationId: getUserPreferences
+      parameters:
+      - name: key
+        in: path
+        description: The key to the user preferences
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User preference stored under this key
+          headers:
+            etag:
+              schema:
+                type: string
+              description: Revision ID
+          content:
+            application/json:
+              schema: {}
+        '404':
+          description: Unknown user preference key
+    put:
+      tags:
+      - userPreferences
+      summary: Set user preferences
+      operationId: setUserPreferences
+      parameters:
+      - name: key
+        in: path
+        description: The key to the user preferences
+        required: true
+        schema:
+          type: string
+      - name: if-match
+        in: header
+        description: The revision to update
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+        required: true
+      responses:
+        '200':
+          description: User preference stored under this key
+          headers:
+            etag:
+              schema:
+                type: string
+              description: Revision ID
+        '412':
+          description: The provided If-Match revision did not match the actual revision
+    delete:
+      tags:
+      - userPreferences
+      summary: Delete user preferences
+      operationId: deleteUserPreferences
+      parameters:
+      - name: key
+        in: path
+        description: The key to the user preferences
+        required: true
+        schema:
+          type: string
+      - name: if-match
+        in: header
+        description: The revision to delete
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+        required: true
+      responses:
+        '201':
+          description: User preferences are deleted
+        '412':
+          description: The provided If-Match revision did not match the actual revision
   /api/v1/vulnerability:
     get:
       tags:
@@ -2152,8 +2243,10 @@ components:
       required:
       - sbom_id
       - node_id
+      - relationship
       - purl
       - name
+      - version
       properties:
         name:
           type: string
@@ -2161,7 +2254,11 @@ components:
           type: string
         purl:
           type: string
+        relationship:
+          type: string
         sbom_id:
+          type: string
+        version:
           type: string
     AncestorSummary:
       type: object
@@ -2170,6 +2267,7 @@ components:
       - node_id
       - purl
       - name
+      - version
       - published
       - document_id
       - product_name
@@ -2195,6 +2293,8 @@ components:
         purl:
           type: string
         sbom_id:
+          type: string
+        version:
           type: string
     BasePurlDetails:
       allOf:
@@ -2360,8 +2460,10 @@ components:
       required:
       - sbom_id
       - node_id
+      - relationship
       - purl
       - name
+      - version
       - deps
       properties:
         deps:
@@ -2374,7 +2476,11 @@ components:
           type: string
         purl:
           type: string
+        relationship:
+          type: string
         sbom_id:
+          type: string
+        version:
           type: string
     DepSummary:
       type: object
@@ -2383,6 +2489,7 @@ components:
       - node_id
       - purl
       - name
+      - version
       - published
       - document_id
       - product_name
@@ -2408,6 +2515,8 @@ components:
         purl:
           type: string
         sbom_id:
+          type: string
+        version:
           type: string
     Id:
       type: string
@@ -2499,10 +2608,8 @@ components:
           format: date-time
           description: The last successful run
         progress:
-          oneOf:
-          - type: 'null'
-          - $ref: '#/components/schemas/Progress'
-            description: The current progress, if available.
+          $ref: '#/components/schemas/Progress'
+          description: The current progress.
         state:
           $ref: '#/components/schemas/State'
           description: The current state of the importer
@@ -2512,20 +2619,27 @@ components:
       - id
       - importer
       - creation
-      - report
       properties:
         creation:
           type: string
           format: date-time
+          description: The time the report was created
         error:
           type:
           - string
           - 'null'
+          description: Errors captured by the report
         id:
           type: string
+          description: The ID of the report
         importer:
           type: string
-        report: {}
+          description: The name of the importer this report belongs to
+        report:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/Report'
+            description: Detailed report information
     IngestResult:
       type: object
       description: The result of the ingestion process
@@ -2573,6 +2687,18 @@ components:
           type: array
           items:
             type: string
+    Message:
+      type: object
+      required:
+      - severity
+      - message
+      properties:
+        message:
+          type: string
+          description: The message
+        severity:
+          $ref: '#/components/schemas/Severity'
+          description: The severity of the message
     MessageType:
       type: string
       enum:
@@ -2715,20 +2841,27 @@ components:
             - id
             - importer
             - creation
-            - report
             properties:
               creation:
                 type: string
                 format: date-time
+                description: The time the report was created
               error:
                 type:
                 - string
                 - 'null'
+                description: Errors captured by the report
               id:
                 type: string
+                description: The ID of the report
               importer:
                 type: string
-              report: {}
+                description: The name of the importer this report belongs to
+              report:
+                oneOf:
+                - type: 'null'
+                - $ref: '#/components/schemas/Report'
+                  description: Detailed report information
         total:
           type: integer
           format: int64
@@ -3048,25 +3181,36 @@ components:
         version:
           type: string
     Progress:
+      allOf:
+      - oneOf:
+        - type: 'null'
+        - $ref: '#/components/schemas/ProgressDetails'
+      - type: object
+        properties:
+          message:
+            type:
+            - string
+            - 'null'
+    ProgressDetails:
       type: object
       required:
       - current
       - total
       - percent
       - rate
-      - estimated_seconds_remaining
-      - estimated_completion
+      - estimatedSecondsRemaining
+      - estimatedCompletion
       properties:
         current:
           type: integer
           format: int32
           description: The current processed items.
           minimum: 0
-        estimated_completion:
+        estimatedCompletion:
           type: string
           format: date-time
           description: The estimated time of completion.
-        estimated_seconds_remaining:
+        estimatedSecondsRemaining:
           type: integer
           format: int64
           description: The estimated remaining time in seconds.
@@ -3197,6 +3341,43 @@ components:
       - dev_tool_of
       - described_by
       - package_of
+      - undefined
+    Report:
+      type: object
+      required:
+      - startDate
+      - endDate
+      properties:
+        endDate:
+          type: string
+          format: date-time
+          description: End of the import run
+        messages:
+          type: object
+          description: Messages emitted during processing
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                $ref: '#/components/schemas/Message'
+            propertyNames:
+              type: string
+          propertyNames:
+            type: string
+            description: The phase of processing
+            enum:
+            - retrieval
+            - validation
+            - upload
+        numberOfItems:
+          type: integer
+          description: Number of processes items
+          minimum: 0
+        startDate:
+          type: string
+          format: date-time
+          description: Start of the import run
     Revisioned_Importer:
       type: object
       description: |-
@@ -3244,6 +3425,7 @@ components:
       - published
       - authors
       - name
+      - number_of_packages
       properties:
         authors:
           type: array
@@ -3261,6 +3443,11 @@ components:
           $ref: '#/components/schemas/Labels'
         name:
           type: string
+        number_of_packages:
+          type: integer
+          format: int64
+          description: The number of packages this SBOM has
+          minimum: 0
         published:
           type:
           - string
@@ -3332,24 +3519,26 @@ components:
         relationship:
           $ref: '#/components/schemas/Relationship'
     SbomStatus:
-      type: object
-      required:
-      - vulnerability_id
-      - status
-      - packages
-      properties:
-        context:
-          oneOf:
-          - type: 'null'
-          - $ref: '#/components/schemas/StatusContext'
-        packages:
-          type: array
-          items:
-            $ref: '#/components/schemas/SbomPackage'
-        status:
-          type: string
-        vulnerability_id:
-          type: string
+      allOf:
+      - $ref: '#/components/schemas/VulnerabilityHead'
+      - type: object
+        required:
+        - average_severity
+        - status
+        - packages
+        properties:
+          average_severity:
+            $ref: '#/components/schemas/Severity'
+          context:
+            oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/StatusContext'
+          packages:
+            type: array
+            items:
+              $ref: '#/components/schemas/SbomPackage'
+          status:
+            type: string
     SbomSummary:
       allOf:
       - $ref: '#/components/schemas/SbomHead'
@@ -3579,12 +3768,18 @@ components:
         - cvss3_scores
         - purls
         - sboms
+        - number_of_vulnerabilities
         properties:
           cvss3_scores:
             type: array
             items:
               type: string
             description: CVSS3 scores from this advisory regarding the vulnerability.
+          number_of_vulnerabilities:
+            type: integer
+            format: int64
+            description: The total number of vulnerabilities described by this advisory
+            minimum: 0
           purls:
             type: object
             additionalProperties:
@@ -3630,6 +3825,7 @@ components:
       - identifier
       - title
       - description
+      - reserved
       - published
       - modified
       - withdrawn
@@ -3679,6 +3875,12 @@ components:
           - 'null'
           format: date-time
           description: The date (in RFC3339 format) of when software containing the vulnerability first released, if known.
+        reserved:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: The date (in RFC3339 format) of when the vulnerability identifier was reserved, if any.
         title:
           type:
           - string

@@ -276,7 +276,7 @@ export const AnalysisStatusSchema = {
 
 export const AncNodeSchema = {
   type: "object",
-  required: ["sbom_id", "node_id", "purl", "name"],
+  required: ["sbom_id", "node_id", "relationship", "purl", "name", "version"],
   properties: {
     name: {
       type: "string",
@@ -287,7 +287,13 @@ export const AncNodeSchema = {
     purl: {
       type: "string",
     },
+    relationship: {
+      type: "string",
+    },
     sbom_id: {
+      type: "string",
+    },
+    version: {
       type: "string",
     },
   },
@@ -300,6 +306,7 @@ export const AncestorSummarySchema = {
     "node_id",
     "purl",
     "name",
+    "version",
     "published",
     "document_id",
     "product_name",
@@ -335,6 +342,9 @@ export const AncestorSummarySchema = {
       type: "string",
     },
     sbom_id: {
+      type: "string",
+    },
+    version: {
       type: "string",
     },
   },
@@ -587,7 +597,15 @@ export const CweImporterSchema = {
 
 export const DepNodeSchema = {
   type: "object",
-  required: ["sbom_id", "node_id", "purl", "name", "deps"],
+  required: [
+    "sbom_id",
+    "node_id",
+    "relationship",
+    "purl",
+    "name",
+    "version",
+    "deps",
+  ],
   properties: {
     deps: {
       type: "array",
@@ -604,7 +622,13 @@ export const DepNodeSchema = {
     purl: {
       type: "string",
     },
+    relationship: {
+      type: "string",
+    },
     sbom_id: {
+      type: "string",
+    },
+    version: {
       type: "string",
     },
   },
@@ -617,6 +641,7 @@ export const DepSummarySchema = {
     "node_id",
     "purl",
     "name",
+    "version",
     "published",
     "document_id",
     "product_name",
@@ -652,6 +677,9 @@ export const DepSummarySchema = {
       type: "string",
     },
     sbom_id: {
+      type: "string",
+    },
+    version: {
       type: "string",
     },
   },
@@ -779,15 +807,8 @@ export const ImporterDataSchema = {
       description: "The last successful run",
     },
     progress: {
-      oneOf: [
-        {
-          type: "null",
-        },
-        {
-          $ref: "#/components/schemas/Progress",
-          description: "The current progress, if available.",
-        },
-      ],
+      $ref: "#/components/schemas/Progress",
+      description: "The current progress.",
     },
     state: {
       $ref: "#/components/schemas/State",
@@ -798,22 +819,36 @@ export const ImporterDataSchema = {
 
 export const ImporterReportSchema = {
   type: "object",
-  required: ["id", "importer", "creation", "report"],
+  required: ["id", "importer", "creation"],
   properties: {
     creation: {
       type: "string",
       format: "date-time",
+      description: "The time the report was created",
     },
     error: {
       type: ["string", "null"],
+      description: "Errors captured by the report",
     },
     id: {
       type: "string",
+      description: "The ID of the report",
     },
     importer: {
       type: "string",
+      description: "The name of the importer this report belongs to",
     },
-    report: {},
+    report: {
+      oneOf: [
+        {
+          type: "null",
+        },
+        {
+          $ref: "#/components/schemas/Report",
+          description: "Detailed report information",
+        },
+      ],
+    },
   },
 } as const;
 
@@ -879,6 +914,21 @@ export const LicenseSummarySchema = {
       items: {
         type: "string",
       },
+    },
+  },
+} as const;
+
+export const MessageSchema = {
+  type: "object",
+  required: ["severity", "message"],
+  properties: {
+    message: {
+      type: "string",
+      description: "The message",
+    },
+    severity: {
+      $ref: "#/components/schemas/Severity",
+      description: "The severity of the message",
     },
   },
 } as const;
@@ -1065,22 +1115,36 @@ export const PaginatedResults_ImporterReportSchema = {
       type: "array",
       items: {
         type: "object",
-        required: ["id", "importer", "creation", "report"],
+        required: ["id", "importer", "creation"],
         properties: {
           creation: {
             type: "string",
             format: "date-time",
+            description: "The time the report was created",
           },
           error: {
             type: ["string", "null"],
+            description: "Errors captured by the report",
           },
           id: {
             type: "string",
+            description: "The ID of the report",
           },
           importer: {
             type: "string",
+            description: "The name of the importer this report belongs to",
           },
-          report: {},
+          report: {
+            oneOf: [
+              {
+                type: "null",
+              },
+              {
+                $ref: "#/components/schemas/Report",
+                description: "Detailed report information",
+              },
+            ],
+          },
         },
       },
     },
@@ -1548,14 +1612,37 @@ export const ProductVersionHeadSchema = {
 } as const;
 
 export const ProgressSchema = {
+  allOf: [
+    {
+      oneOf: [
+        {
+          type: "null",
+        },
+        {
+          $ref: "#/components/schemas/ProgressDetails",
+        },
+      ],
+    },
+    {
+      type: "object",
+      properties: {
+        message: {
+          type: ["string", "null"],
+        },
+      },
+    },
+  ],
+} as const;
+
+export const ProgressDetailsSchema = {
   type: "object",
   required: [
     "current",
     "total",
     "percent",
     "rate",
-    "estimated_seconds_remaining",
-    "estimated_completion",
+    "estimatedSecondsRemaining",
+    "estimatedCompletion",
   ],
   properties: {
     current: {
@@ -1564,12 +1651,12 @@ export const ProgressSchema = {
       description: "The current processed items.",
       minimum: 0,
     },
-    estimated_completion: {
+    estimatedCompletion: {
       type: "string",
       format: "date-time",
       description: "The estimated time of completion.",
     },
-    estimated_seconds_remaining: {
+    estimatedSecondsRemaining: {
       type: "integer",
       format: "int64",
       description: "The estimated remaining time in seconds.",
@@ -1753,7 +1840,51 @@ export const RelationshipSchema = {
     "dev_tool_of",
     "described_by",
     "package_of",
+    "undefined",
   ],
+} as const;
+
+export const ReportSchema = {
+  type: "object",
+  required: ["startDate", "endDate"],
+  properties: {
+    endDate: {
+      type: "string",
+      format: "date-time",
+      description: "End of the import run",
+    },
+    messages: {
+      type: "object",
+      description: "Messages emitted during processing",
+      additionalProperties: {
+        type: "object",
+        additionalProperties: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/Message",
+          },
+        },
+        propertyNames: {
+          type: "string",
+        },
+      },
+      propertyNames: {
+        type: "string",
+        description: "The phase of processing",
+        enum: ["retrieval", "validation", "upload"],
+      },
+    },
+    numberOfItems: {
+      type: "integer",
+      description: "Number of processes items",
+      minimum: 0,
+    },
+    startDate: {
+      type: "string",
+      format: "date-time",
+      description: "Start of the import run",
+    },
+  },
 } as const;
 
 export const Revisioned_ImporterSchema = {
@@ -1819,6 +1950,7 @@ export const SbomHeadSchema = {
     "published",
     "authors",
     "name",
+    "number_of_packages",
   ],
   properties: {
     authors: {
@@ -1844,6 +1976,12 @@ export const SbomHeadSchema = {
     },
     name: {
       type: "string",
+    },
+    number_of_packages: {
+      type: "integer",
+      format: "int64",
+      description: "The number of packages this SBOM has",
+      minimum: 0,
     },
     published: {
       type: ["string", "null"],
@@ -1944,32 +2082,39 @@ export const SbomPackageRelationSchema = {
 } as const;
 
 export const SbomStatusSchema = {
-  type: "object",
-  required: ["vulnerability_id", "status", "packages"],
-  properties: {
-    context: {
-      oneOf: [
-        {
-          type: "null",
-        },
-        {
-          $ref: "#/components/schemas/StatusContext",
-        },
-      ],
+  allOf: [
+    {
+      $ref: "#/components/schemas/VulnerabilityHead",
     },
-    packages: {
-      type: "array",
-      items: {
-        $ref: "#/components/schemas/SbomPackage",
+    {
+      type: "object",
+      required: ["average_severity", "status", "packages"],
+      properties: {
+        average_severity: {
+          $ref: "#/components/schemas/Severity",
+        },
+        context: {
+          oneOf: [
+            {
+              type: "null",
+            },
+            {
+              $ref: "#/components/schemas/StatusContext",
+            },
+          ],
+        },
+        packages: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/SbomPackage",
+          },
+        },
+        status: {
+          type: "string",
+        },
       },
     },
-    status: {
-      type: "string",
-    },
-    vulnerability_id: {
-      type: "string",
-    },
-  },
+  ],
 } as const;
 
 export const SbomSummarySchema = {
@@ -2302,7 +2447,7 @@ export const VulnerabilityAdvisorySummarySchema = {
     },
     {
       type: "object",
-      required: ["cvss3_scores", "purls", "sboms"],
+      required: ["cvss3_scores", "purls", "sboms", "number_of_vulnerabilities"],
       properties: {
         cvss3_scores: {
           type: "array",
@@ -2311,6 +2456,13 @@ export const VulnerabilityAdvisorySummarySchema = {
           },
           description:
             "CVSS3 scores from this advisory regarding the vulnerability.",
+        },
+        number_of_vulnerabilities: {
+          type: "integer",
+          format: "int64",
+          description:
+            "The total number of vulnerabilities described by this advisory",
+          minimum: 0,
         },
         purls: {
           type: "object",
@@ -2383,6 +2535,7 @@ export const VulnerabilityHeadSchema = {
     "identifier",
     "title",
     "description",
+    "reserved",
     "published",
     "modified",
     "withdrawn",
@@ -2434,6 +2587,12 @@ CVE identifier.`,
       format: "date-time",
       description:
         "The date (in RFC3339 format) of when software containing the vulnerability first released, if known.",
+    },
+    reserved: {
+      type: ["string", "null"],
+      format: "date-time",
+      description:
+        "The date (in RFC3339 format) of when the vulnerability identifier was reserved, if any.",
     },
     title: {
       type: ["string", "null"],

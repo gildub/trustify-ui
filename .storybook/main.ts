@@ -17,7 +17,6 @@ const config: StorybookConfig = {
   ],
   addons: [
     getAbsolutePath("@storybook/addon-webpack5-compiler-swc"),
-    getAbsolutePath("@storybook/addon-onboarding"),
     getAbsolutePath("@storybook/addon-links"),
     getAbsolutePath("@storybook/addon-essentials"),
     getAbsolutePath("@chromatic-com/storybook"),
@@ -27,9 +26,7 @@ const config: StorybookConfig = {
     name: getAbsolutePath("@storybook/react-webpack5"),
     options: {},
   },
-  docs: {
-    autodocs: "tag",
-  },
+  staticDirs: ["../public", "../client/public", "../client/src/app/images"],
   typescript: {
     reactDocgen: "react-docgen-typescript",
     reactDocgenTypescriptOptions: {
@@ -44,10 +41,16 @@ const config: StorybookConfig = {
       config.resolve.plugins = [
         ...(config.resolve.plugins || []),
         new TsconfigPathsPlugin({
-          configFile: "client/tsconfig.json",
+          configFile: path.resolve(__dirname, "../client/tsconfig.json"),
           extensions: config.resolve.extensions,
         }),
       ];
+    }
+    if (config.module) {
+      config.module.rules?.push({
+        test: /\.svg$/,
+        use: ["@svgr/webpack"],
+      });
     }
     return config;
   },
