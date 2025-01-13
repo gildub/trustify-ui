@@ -54,6 +54,7 @@ export const AdvisoryHeadSchema = {
   required: [
     "uuid",
     "identifier",
+    "document_id",
     "issuer",
     "published",
     "withdrawn",
@@ -61,6 +62,11 @@ export const AdvisoryHeadSchema = {
     "labels",
   ],
   properties: {
+    document_id: {
+      type: "string",
+      description:
+        "The identifier of the advisory, as provided by the document.",
+    },
     identifier: {
       type: "string",
       description:
@@ -390,9 +396,6 @@ export const BasePurlSummarySchema = {
   allOf: [
     {
       $ref: "#/components/schemas/BasePurlHead",
-    },
-    {
-      type: "object",
     },
   ],
 } as const;
@@ -855,10 +858,10 @@ export const ImporterReportSchema = {
 export const IngestResultSchema = {
   type: "object",
   description: "The result of the ingestion process",
-  required: ["id", "document_id"],
+  required: ["id"],
   properties: {
     document_id: {
-      type: "string",
+      type: ["string", "null"],
       description: "The ID declared by the document",
     },
     id: {
@@ -990,9 +993,6 @@ export const OrganizationSummarySchema = {
     {
       $ref: "#/components/schemas/OrganizationHead",
     },
-    {
-      type: "object",
-    },
   ],
 } as const;
 
@@ -1018,6 +1018,20 @@ export const OsvImporterSchema = {
         source: {
           type: "string",
           description: "The URL to the git repository of the OSV data",
+        },
+        startYear: {
+          type: ["integer", "null"],
+          format: "int32",
+          minimum: 0,
+        },
+        years: {
+          type: "array",
+          items: {
+            type: "integer",
+            format: "int32",
+            minimum: 0,
+          },
+          uniqueItems: true,
         },
       },
     },
@@ -1092,9 +1106,6 @@ export const PaginatedResults_BasePurlSummarySchema = {
         allOf: [
           {
             $ref: "#/components/schemas/BasePurlHead",
-          },
-          {
-            type: "object",
           },
         ],
       },
@@ -1772,8 +1783,11 @@ export const PurlLicenseSummarySchema = {
 
 export const PurlStatusSchema = {
   type: "object",
-  required: ["vulnerability", "status", "context"],
+  required: ["vulnerability", "average_severity", "status", "context"],
   properties: {
+    average_severity: {
+      $ref: "#/components/schemas/Severity",
+    },
     context: {
       oneOf: [
         {
@@ -1944,7 +1958,6 @@ export const SbomHeadSchema = {
   type: "object",
   required: [
     "id",
-    "document_id",
     "labels",
     "data_licenses",
     "published",
@@ -1966,7 +1979,7 @@ export const SbomHeadSchema = {
       },
     },
     document_id: {
-      type: "string",
+      type: ["string", "null"],
     },
     id: {
       type: "string",
@@ -2161,8 +2174,13 @@ Described in CVSS v3.1 Specification: Section 5:
 
 export const SourceDocumentSchema = {
   type: "object",
-  required: ["sha256", "sha384", "sha512", "size"],
+  required: ["sha256", "sha384", "sha512", "size", "ingested"],
   properties: {
+    ingested: {
+      type: "string",
+      format: "date-time",
+      description: "The timestamp the document was ingested",
+    },
     sha256: {
       type: "string",
     },
@@ -2614,14 +2632,20 @@ export const VulnerabilitySbomStatusSchema = {
     },
     {
       type: "object",
-      required: ["status"],
+      required: ["purl_statuses"],
       properties: {
-        status: {
-          type: "array",
-          items: {
+        purl_statuses: {
+          type: "object",
+          additionalProperties: {
+            type: "array",
+            items: {
+              $ref: "#/components/schemas/PurlSummary",
+            },
+            uniqueItems: true,
+          },
+          propertyNames: {
             type: "string",
           },
-          uniqueItems: true,
         },
         version: {
           type: ["string", "null"],

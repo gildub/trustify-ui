@@ -15,6 +15,10 @@ export type AdvisoryDetails = AdvisoryHead &
 
 export type AdvisoryHead = {
   /**
+   * The identifier of the advisory, as provided by the document.
+   */
+  document_id: string;
+  /**
    * The identifier of the advisory, as assigned by the issuing organization.
    */
   identifier: string;
@@ -152,9 +156,7 @@ export type BasePurlHead = {
   uuid: string;
 };
 
-export type BasePurlSummary = BasePurlHead & {
-  [key: string]: unknown;
-};
+export type BasePurlSummary = BasePurlHead;
 
 export type BinaryByteSize = string;
 
@@ -342,7 +344,7 @@ export type IngestResult = {
   /**
    * The ID declared by the document
    */
-  document_id: string;
+  document_id?: string | null;
   /**
    * The internal ID of the document
    */
@@ -408,9 +410,7 @@ export type OrganizationHead = {
   website: string | null;
 };
 
-export type OrganizationSummary = OrganizationHead & {
-  [key: string]: unknown;
-};
+export type OrganizationSummary = OrganizationHead;
 
 export type OsvImporter = CommonImporter & {
   /**
@@ -425,6 +425,8 @@ export type OsvImporter = CommonImporter & {
    * The URL to the git repository of the OSV data
    */
   source: string;
+  startYear?: number | null;
+  years?: Array<number>;
 };
 
 export type PaginatedResults_AdvisorySummary = {
@@ -449,11 +451,7 @@ export type PaginatedResults_AdvisorySummary = {
 };
 
 export type PaginatedResults_BasePurlSummary = {
-  items: Array<
-    BasePurlHead & {
-      [key: string]: unknown;
-    }
-  >;
+  items: Array<BasePurlHead>;
   total: number;
 };
 
@@ -656,6 +654,7 @@ export type PurlLicenseSummary = {
 };
 
 export type PurlStatus = {
+  average_severity: Severity;
   context: null | StatusContext;
   status: string;
   vulnerability: VulnerabilityHead;
@@ -735,7 +734,7 @@ export type SbomAdvisory = AdvisoryHead & {
 export type SbomHead = {
   authors: Array<string>;
   data_licenses: Array<string>;
-  document_id: string;
+  document_id?: string | null;
   id: string;
   labels: Labels;
   name: string;
@@ -793,6 +792,10 @@ export type SbomSummary = SbomHead &
 export type Severity = "none" | "low" | "medium" | "high" | "critical";
 
 export type SourceDocument = {
+  /**
+   * The timestamp the document was ingested
+   */
+  ingested: string;
   sha256: string;
   sha384: string;
   sha512: string;
@@ -955,7 +958,9 @@ export type VulnerabilityHead = {
 };
 
 export type VulnerabilitySbomStatus = SbomHead & {
-  status: Array<string>;
+  purl_statuses: {
+    [key: string]: Array<PurlSummary>;
+  };
   version?: string | null;
 };
 

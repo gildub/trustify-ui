@@ -5,7 +5,7 @@ info:
   license:
     name: Apache License, Version 2.0
     identifier: Apache-2.0
-  version: 0.1.0-alpha.26
+  version: 0.1.1
 paths:
   /.well-known/trustify:
     get:
@@ -2078,12 +2078,16 @@ components:
       required:
       - uuid
       - identifier
+      - document_id
       - issuer
       - published
       - withdrawn
       - title
       - labels
       properties:
+        document_id:
+          type: string
+          description: The identifier of the advisory, as provided by the document.
         identifier:
           type: string
           description: The identifier of the advisory, as assigned by the issuing organization.
@@ -2323,7 +2327,6 @@ components:
     BasePurlSummary:
       allOf:
       - $ref: '#/components/schemas/BasePurlHead'
-      - type: object
     BinaryByteSize:
       type: string
     ChatMessage:
@@ -2645,10 +2648,11 @@ components:
       description: The result of the ingestion process
       required:
       - id
-      - document_id
       properties:
         document_id:
-          type: string
+          type:
+          - string
+          - 'null'
           description: The ID declared by the document
         id:
           $ref: '#/components/schemas/Id'
@@ -2749,7 +2753,6 @@ components:
     OrganizationSummary:
       allOf:
       - $ref: '#/components/schemas/OrganizationHead'
-      - type: object
     OsvImporter:
       allOf:
       - $ref: '#/components/schemas/CommonImporter'
@@ -2770,6 +2773,19 @@ components:
           source:
             type: string
             description: The URL to the git repository of the OSV data
+          startYear:
+            type:
+            - integer
+            - 'null'
+            format: int32
+            minimum: 0
+          years:
+            type: array
+            items:
+              type: integer
+              format: int32
+              minimum: 0
+            uniqueItems: true
     PaginatedResults_AdvisorySummary:
       type: object
       required:
@@ -2822,7 +2838,6 @@ components:
           items:
             allOf:
             - $ref: '#/components/schemas/BasePurlHead'
-            - type: object
         total:
           type: integer
           format: int64
@@ -3293,9 +3308,12 @@ components:
       type: object
       required:
       - vulnerability
+      - average_severity
       - status
       - context
       properties:
+        average_severity:
+          $ref: '#/components/schemas/Severity'
         context:
           oneOf:
           - type: 'null'
@@ -3419,7 +3437,6 @@ components:
       type: object
       required:
       - id
-      - document_id
       - labels
       - data_licenses
       - published
@@ -3436,7 +3453,9 @@ components:
           items:
             type: string
         document_id:
-          type: string
+          type:
+          - string
+          - 'null'
         id:
           type: string
         labels:
@@ -3576,7 +3595,12 @@ components:
       - sha384
       - sha512
       - size
+      - ingested
       properties:
+        ingested:
+          type: string
+          format: date-time
+          description: The timestamp the document was ingested
         sha256:
           type: string
         sha384:
@@ -3897,13 +3921,17 @@ components:
       - $ref: '#/components/schemas/SbomHead'
       - type: object
         required:
-        - status
+        - purl_statuses
         properties:
-          status:
-            type: array
-            items:
+          purl_statuses:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                $ref: '#/components/schemas/PurlSummary'
+              uniqueItems: true
+            propertyNames:
               type: string
-            uniqueItems: true
           version:
             type:
             - string
