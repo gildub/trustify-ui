@@ -243,28 +243,6 @@ export const AiToolSchema = {
   },
 } as const;
 
-export const AllRelatedQuerySchema = {
-  type: "object",
-  properties: {
-    id: {
-      type: ["string", "null"],
-      format: "uuid",
-      description: "Find by an ID of a package",
-    },
-    purl: {
-      oneOf: [
-        {
-          type: "null",
-        },
-        {
-          $ref: "#/components/schemas/Purl",
-          description: "Find by PURL",
-        },
-      ],
-    },
-  },
-} as const;
-
 export const AnalysisStatusSchema = {
   type: "object",
   required: ["sbom_count", "graph_count"],
@@ -272,18 +250,36 @@ export const AnalysisStatusSchema = {
     graph_count: {
       type: "integer",
       format: "int32",
+      description: "The number of graphs loaded in memory",
+      minimum: 0,
     },
     sbom_count: {
       type: "integer",
       format: "int32",
+      description: "The number of SBOMs found in the database",
+      minimum: 0,
     },
   },
 } as const;
 
 export const AncNodeSchema = {
   type: "object",
-  required: ["sbom_id", "node_id", "relationship", "purl", "name", "version"],
+  required: [
+    "sbom_id",
+    "node_id",
+    "relationship",
+    "purl",
+    "cpe",
+    "name",
+    "version",
+  ],
   properties: {
+    cpe: {
+      type: "array",
+      items: {
+        $ref: "#/components/schemas/Cpe",
+      },
+    },
     name: {
       type: "string",
     },
@@ -291,7 +287,10 @@ export const AncNodeSchema = {
       type: "string",
     },
     purl: {
-      type: "string",
+      type: "array",
+      items: {
+        $ref: "#/components/schemas/Purl",
+      },
     },
     relationship: {
       type: "string",
@@ -306,54 +305,23 @@ export const AncNodeSchema = {
 } as const;
 
 export const AncestorSummarySchema = {
-  type: "object",
-  required: [
-    "sbom_id",
-    "node_id",
-    "purl",
-    "name",
-    "version",
-    "published",
-    "document_id",
-    "product_name",
-    "product_version",
-    "ancestors",
-  ],
-  properties: {
-    ancestors: {
-      type: "array",
-      items: {
-        $ref: "#/components/schemas/AncNode",
+  allOf: [
+    {
+      $ref: "#/components/schemas/BaseSummary",
+    },
+    {
+      type: "object",
+      required: ["ancestors"],
+      properties: {
+        ancestors: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/AncNode",
+          },
+        },
       },
     },
-    document_id: {
-      type: "string",
-    },
-    name: {
-      type: "string",
-    },
-    node_id: {
-      type: "string",
-    },
-    product_name: {
-      type: "string",
-    },
-    product_version: {
-      type: "string",
-    },
-    published: {
-      type: "string",
-    },
-    purl: {
-      type: "string",
-    },
-    sbom_id: {
-      type: "string",
-    },
-    version: {
-      type: "string",
-    },
-  },
+  ],
 } as const;
 
 export const BasePurlDetailsSchema = {
@@ -400,22 +368,77 @@ export const BasePurlSummarySchema = {
   ],
 } as const;
 
+export const BaseSummarySchema = {
+  type: "object",
+  required: [
+    "sbom_id",
+    "node_id",
+    "purl",
+    "cpe",
+    "name",
+    "version",
+    "published",
+    "document_id",
+    "product_name",
+    "product_version",
+  ],
+  properties: {
+    cpe: {
+      type: "array",
+      items: {
+        $ref: "#/components/schemas/Cpe",
+      },
+    },
+    document_id: {
+      type: "string",
+    },
+    name: {
+      type: "string",
+    },
+    node_id: {
+      type: "string",
+    },
+    product_name: {
+      type: "string",
+    },
+    product_version: {
+      type: "string",
+    },
+    published: {
+      type: "string",
+    },
+    purl: {
+      type: "array",
+      items: {
+        $ref: "#/components/schemas/Purl",
+      },
+    },
+    sbom_id: {
+      type: "string",
+    },
+    version: {
+      type: "string",
+    },
+  },
+} as const;
+
 export const BinaryByteSizeSchema = {
   type: "string",
 } as const;
 
 export const ChatMessageSchema = {
   type: "object",
-  required: ["message_type", "content"],
+  required: ["message_type", "content", "timestamp"],
   properties: {
     content: {
       type: "string",
     },
-    internal_state: {
-      type: ["string", "null"],
-    },
     message_type: {
       $ref: "#/components/schemas/MessageType",
+    },
+    timestamp: {
+      type: "string",
+      format: "date-time",
     },
   },
 } as const;
@@ -424,6 +447,9 @@ export const ChatStateSchema = {
   type: "object",
   required: ["messages"],
   properties: {
+    internal_state: {
+      type: ["string", "null"],
+    },
     messages: {
       type: "array",
       items: {
@@ -519,6 +545,54 @@ export const CommonImporterSchema = {
   },
 } as const;
 
+export const ConversationSchema = {
+  type: "object",
+  required: ["id", "messages", "updated_at", "seq"],
+  properties: {
+    id: {
+      type: "string",
+      format: "uuid",
+    },
+    messages: {
+      type: "array",
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+    },
+    seq: {
+      type: "integer",
+      format: "int32",
+    },
+    updated_at: {
+      type: "string",
+      format: "date-time",
+    },
+  },
+} as const;
+
+export const ConversationSummarySchema = {
+  type: "object",
+  required: ["id", "updated_at", "summary"],
+  properties: {
+    id: {
+      type: "string",
+      format: "uuid",
+    },
+    summary: {
+      type: "string",
+    },
+    updated_at: {
+      type: "string",
+      format: "date-time",
+    },
+  },
+} as const;
+
+export const CpeSchema = {
+  type: "string",
+  format: "uri",
+} as const;
+
 export const CsafImporterSchema = {
   allOf: [
     {
@@ -605,11 +679,18 @@ export const DepNodeSchema = {
     "node_id",
     "relationship",
     "purl",
+    "cpe",
     "name",
     "version",
     "deps",
   ],
   properties: {
+    cpe: {
+      type: "array",
+      items: {
+        $ref: "#/components/schemas/Cpe",
+      },
+    },
     deps: {
       type: "array",
       items: {
@@ -623,7 +704,10 @@ export const DepNodeSchema = {
       type: "string",
     },
     purl: {
-      type: "string",
+      type: "array",
+      items: {
+        $ref: "#/components/schemas/Purl",
+      },
     },
     relationship: {
       type: "string",
@@ -638,52 +722,49 @@ export const DepNodeSchema = {
 } as const;
 
 export const DepSummarySchema = {
-  type: "object",
-  required: [
-    "sbom_id",
-    "node_id",
-    "purl",
-    "name",
-    "version",
-    "published",
-    "document_id",
-    "product_name",
-    "product_version",
-    "deps",
-  ],
-  properties: {
-    deps: {
-      type: "array",
-      items: {
-        $ref: "#/components/schemas/DepNode",
+  allOf: [
+    {
+      $ref: "#/components/schemas/BaseSummary",
+    },
+    {
+      type: "object",
+      required: ["deps"],
+      properties: {
+        deps: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/DepNode",
+          },
+        },
       },
     },
-    document_id: {
-      type: "string",
-    },
-    name: {
-      type: "string",
-    },
-    node_id: {
-      type: "string",
-    },
-    product_name: {
-      type: "string",
-    },
-    product_version: {
-      type: "string",
-    },
-    published: {
-      type: "string",
+  ],
+} as const;
+
+export const ExternalReferenceQuerySchema = {
+  type: "object",
+  properties: {
+    cpe: {
+      oneOf: [
+        {
+          type: "null",
+        },
+        {
+          $ref: "#/components/schemas/Cpe",
+          description: "Find by CPE",
+        },
+      ],
     },
     purl: {
-      type: "string",
-    },
-    sbom_id: {
-      type: "string",
-    },
-    version: {
-      type: "string",
+      oneOf: [
+        {
+          type: "null",
+        },
+        {
+          $ref: "#/components/schemas/Purl",
+          description: "Find by PURL",
+        },
+      ],
     },
   },
 } as const;
@@ -1096,6 +1177,40 @@ export const PaginatedResults_AdvisorySummarySchema = {
   },
 } as const;
 
+export const PaginatedResults_AncestorSummarySchema = {
+  type: "object",
+  required: ["items", "total"],
+  properties: {
+    items: {
+      type: "array",
+      items: {
+        allOf: [
+          {
+            $ref: "#/components/schemas/BaseSummary",
+          },
+          {
+            type: "object",
+            required: ["ancestors"],
+            properties: {
+              ancestors: {
+                type: "array",
+                items: {
+                  $ref: "#/components/schemas/AncNode",
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+    total: {
+      type: "integer",
+      format: "int64",
+      minimum: 0,
+    },
+  },
+} as const;
+
 export const PaginatedResults_BasePurlSummarySchema = {
   type: "object",
   required: ["items", "total"],
@@ -1106,6 +1221,140 @@ export const PaginatedResults_BasePurlSummarySchema = {
         allOf: [
           {
             $ref: "#/components/schemas/BasePurlHead",
+          },
+        ],
+      },
+    },
+    total: {
+      type: "integer",
+      format: "int64",
+      minimum: 0,
+    },
+  },
+} as const;
+
+export const PaginatedResults_BaseSummarySchema = {
+  type: "object",
+  required: ["items", "total"],
+  properties: {
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        required: [
+          "sbom_id",
+          "node_id",
+          "purl",
+          "cpe",
+          "name",
+          "version",
+          "published",
+          "document_id",
+          "product_name",
+          "product_version",
+        ],
+        properties: {
+          cpe: {
+            type: "array",
+            items: {
+              $ref: "#/components/schemas/Cpe",
+            },
+          },
+          document_id: {
+            type: "string",
+          },
+          name: {
+            type: "string",
+          },
+          node_id: {
+            type: "string",
+          },
+          product_name: {
+            type: "string",
+          },
+          product_version: {
+            type: "string",
+          },
+          published: {
+            type: "string",
+          },
+          purl: {
+            type: "array",
+            items: {
+              $ref: "#/components/schemas/Purl",
+            },
+          },
+          sbom_id: {
+            type: "string",
+          },
+          version: {
+            type: "string",
+          },
+        },
+      },
+    },
+    total: {
+      type: "integer",
+      format: "int64",
+      minimum: 0,
+    },
+  },
+} as const;
+
+export const PaginatedResults_ConversationSummarySchema = {
+  type: "object",
+  required: ["items", "total"],
+  properties: {
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["id", "updated_at", "summary"],
+        properties: {
+          id: {
+            type: "string",
+            format: "uuid",
+          },
+          summary: {
+            type: "string",
+          },
+          updated_at: {
+            type: "string",
+            format: "date-time",
+          },
+        },
+      },
+    },
+    total: {
+      type: "integer",
+      format: "int64",
+      minimum: 0,
+    },
+  },
+} as const;
+
+export const PaginatedResults_DepSummarySchema = {
+  type: "object",
+  required: ["items", "total"],
+  properties: {
+    items: {
+      type: "array",
+      items: {
+        allOf: [
+          {
+            $ref: "#/components/schemas/BaseSummary",
+          },
+          {
+            type: "object",
+            required: ["deps"],
+            properties: {
+              deps: {
+                type: "array",
+                items: {
+                  $ref: "#/components/schemas/DepNode",
+                },
+              },
+            },
           },
         ],
       },
