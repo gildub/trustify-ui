@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { generatePath, Link } from "react-router-dom";
 
 import dayjs from "dayjs";
 
@@ -14,7 +14,6 @@ import {
   Tr,
 } from "@patternfly/react-table";
 
-import { getSeverityPriority } from "@app/api/model-utils";
 import { SeverityShieldAndText } from "@app/components/SeverityShieldAndText";
 import { SimplePagination } from "@app/components/SimplePagination";
 import {
@@ -26,6 +25,7 @@ import { TdWithFocusStatus } from "@app/components/TdWithFocusStatus";
 import { VulnerabilityDescription } from "@app/components/VulnerabilityDescription";
 import { useVulnerabilitiesOfPackage } from "@app/hooks/domain-controls/useVulnerabilitiesOfPackage";
 import { useLocalTableControls } from "@app/hooks/table-controls";
+import { Paths } from "@app/Routes";
 import { useWithUiId } from "@app/utils/query-utils";
 import { formatDate } from "@app/utils/utils";
 
@@ -70,9 +70,7 @@ export const VulnerabilitiesByPackage: React.FC<
     getSortValues: (item) => {
       return {
         identifier: item.vulnerability.identifier,
-        severity: item.vulnerability?.average_severity
-          ? getSeverityPriority(item.vulnerability?.average_severity)
-          : 0,
+        severity: item.vulnerability?.average_score || 0,
         published: item.vulnerability?.published
           ? dayjs(item.vulnerability?.published).valueOf()
           : 0,
@@ -145,7 +143,9 @@ export const VulnerabilitiesByPackage: React.FC<
                       {...getTdProps({ columnKey: "identifier" })}
                     >
                       <Link
-                        to={`/vulnerabilities/${item.vulnerability.identifier}`}
+                        to={generatePath(Paths.vulnerabilityDetails, {
+                          vulnerabilityId: item.vulnerability.identifier,
+                        })}
                       >
                         {item.vulnerability.identifier}
                       </Link>

@@ -5,7 +5,7 @@ info:
   license:
     name: Apache License, Version 2.0
     identifier: Apache-2.0
-  version: 0.3.3
+  version: 0.3.5
 paths:
   /.well-known/trustify:
     get:
@@ -33,66 +33,37 @@ paths:
       parameters:
       - name: q
         in: query
-        description: |
-          EBNF grammar for the _q_ parameter:
-          ```text
-              q = ( values | filter ) { '&' q }
-              values = value { '|', values }
-              filter = field, operator, values
-              operator = "=" | "!=" | "~" | "!~" | ">=" | ">" | "<=" | "<"
-              value = (* any text but escape special characters with '\' *)
-              field = (* must match an entity attribute name *)
-          ```
-          Any values in a _q_ will result in a case-insensitive "full
-          text search", effectively producing an OR clause of LIKE
-          clauses for every string-ish field in the resource being
-          queried.
-
-          Examples:
-          - `foo` - any field containing 'foo'
-          - `foo|bar` - any field containing either 'foo' OR 'bar'
-          - `foo&bar` - some field contains 'foo' AND some field contains 'bar'
-
-          A _filter_ may also be used to constrain the results. The
-          filter's field name must correspond to one of the resource's
-          attributes. If it doesn't, an error will be returned
-          containing a list of the valid fields for that resource.
-
-          The value 'null' is treated specially for [Not]Equal filters:
-          it returns resources on which the field isn't set. Use the
-          LIKE operator, `~`, to match a literal "null" string. Omit the
-          value to match an empty string.
-
-          Examples:
-          - `name=foo` - entity's _name_ matches 'foo' exactly
-          - `name~foo` - entity's _name_ contains 'foo', case-insensitive
-          - `name~foo|bar` - entity's _name_ contains either 'foo' OR 'bar', case-insensitive
-          - `name=` - entity's _name_ is the empty string, ''
-          - `name=null` - entity's _name_ isn't set
-          - `published>3 days ago` - date values can be "human time"
-
-          Multiple full text searches and/or filters should be
-          '&'-delimited -- they are logically AND'd together.
-
-          - `red hat|fedora&labels:type=cve|osv&published>last wednesday 17:00`
-
-          Fields corresponding to JSON objects in the database may use a
-          ':' to delimit the column name and the object key,
-          e.g. `purl:qualifiers:type=pom`
-
-          Any operator or special character, e.g. '|', '&', within a
-          value should be escaped by prefixing it with a backslash.
+        description: |-
+          Query for advisories defined using the following EBNF grammar (ISO/IEC 14977):
+          (* Query Grammar - EBNF Compliant *)
+          query = ( values | filter ) , { "&" , query } ;
+          values = value , { "|" , value } ;
+          filter = field , operator , values ;
+          operator = "=" | "!=" | "~" | "!~" | ">=" | ">" | "<=" | "<" ;
+          field = ("id" | "identifier" | "version" | "document_id" | "deprecated" | "issuer_id" | "published" | "modified" | "withdrawn" | "title" | "ingested" | "label")
+          value = { value_char } ;
+          value_char = escaped_char | normal_char ;
+          escaped_char = "\" , special_char ;
+          normal_char = ? any character except '&', '|', '=', '!', '~', '>', '<', '\' ? ;
+          special_char = "&" | "|" | "=" | "!" | "~" | ">" | "<" | "\" ;
+          (* Examples:
+              - Simple filter: title=example
+              - Multiple values filter: title=foo|bar|baz
+              - Complex filter: modified>2024-01-01
+              - Combined query: title=foo&average_severity=high
+              - Escaped characters: title=foo\&bar
+          *)
         required: false
         schema:
           type: string
       - name: sort
         in: query
-        description: |
+        description: |-
           EBNF grammar for the _sort_ parameter:
           ```text
               sort = field [ ':', order ] { ',' sort }
               order = ( "asc" | "desc" )
-              field = (* must match the name of entity's attributes *)
+              field = ("id" | "identifier" | "version" | "document_id" | "deprecated" | "issuer_id" | "published" | "modified" | "withdrawn" | "title" | "ingested" | "label")
           ```
           The optional _order_ should be one of "asc" or "desc". If
           omitted, the order defaults to "asc".
@@ -2977,66 +2948,37 @@ paths:
       parameters:
       - name: q
         in: query
-        description: |
-          EBNF grammar for the _q_ parameter:
-          ```text
-              q = ( values | filter ) { '&' q }
-              values = value { '|', values }
-              filter = field, operator, values
-              operator = "=" | "!=" | "~" | "!~" | ">=" | ">" | "<=" | "<"
-              value = (* any text but escape special characters with '\' *)
-              field = (* must match an entity attribute name *)
-          ```
-          Any values in a _q_ will result in a case-insensitive "full
-          text search", effectively producing an OR clause of LIKE
-          clauses for every string-ish field in the resource being
-          queried.
-
-          Examples:
-          - `foo` - any field containing 'foo'
-          - `foo|bar` - any field containing either 'foo' OR 'bar'
-          - `foo&bar` - some field contains 'foo' AND some field contains 'bar'
-
-          A _filter_ may also be used to constrain the results. The
-          filter's field name must correspond to one of the resource's
-          attributes. If it doesn't, an error will be returned
-          containing a list of the valid fields for that resource.
-
-          The value 'null' is treated specially for [Not]Equal filters:
-          it returns resources on which the field isn't set. Use the
-          LIKE operator, `~`, to match a literal "null" string. Omit the
-          value to match an empty string.
-
-          Examples:
-          - `name=foo` - entity's _name_ matches 'foo' exactly
-          - `name~foo` - entity's _name_ contains 'foo', case-insensitive
-          - `name~foo|bar` - entity's _name_ contains either 'foo' OR 'bar', case-insensitive
-          - `name=` - entity's _name_ is the empty string, ''
-          - `name=null` - entity's _name_ isn't set
-          - `published>3 days ago` - date values can be "human time"
-
-          Multiple full text searches and/or filters should be
-          '&'-delimited -- they are logically AND'd together.
-
-          - `red hat|fedora&labels:type=cve|osv&published>last wednesday 17:00`
-
-          Fields corresponding to JSON objects in the database may use a
-          ':' to delimit the column name and the object key,
-          e.g. `purl:qualifiers:type=pom`
-
-          Any operator or special character, e.g. '|', '&', within a
-          value should be escaped by prefixing it with a backslash.
+        description: |-
+          Query for advisories defined using the following EBNF grammar (ISO/IEC 14977):
+          (* Query Grammar - EBNF Compliant *)
+          query = ( values | filter ) , { "&" , query } ;
+          values = value , { "|" , value } ;
+          filter = field , operator , values ;
+          operator = "=" | "!=" | "~" | "!~" | ">=" | ">" | "<=" | "<" ;
+          field = ("id" | "title" | "reserved" | "published" | "modified" | "withdrawn" | "cwes" | "base_score" | "base_severity")
+          value = { value_char } ;
+          value_char = escaped_char | normal_char ;
+          escaped_char = "\" , special_char ;
+          normal_char = ? any character except '&', '|', '=', '!', '~', '>', '<', '\' ? ;
+          special_char = "&" | "|" | "=" | "!" | "~" | ">" | "<" | "\" ;
+          (* Examples:
+              - Simple filter: title=example
+              - Multiple values filter: title=foo|bar|baz
+              - Complex filter: modified>2024-01-01
+              - Combined query: title=foo&average_severity=high
+              - Escaped characters: title=foo\&bar
+          *)
         required: false
         schema:
           type: string
       - name: sort
         in: query
-        description: |
+        description: |-
           EBNF grammar for the _sort_ parameter:
           ```text
               sort = field [ ':', order ] { ',' sort }
               order = ( "asc" | "desc" )
-              field = (* must match the name of entity's attributes *)
+              field = ("id" | "title" | "reserved" | "published" | "modified" | "withdrawn" | "cwes" | "base_score" | "base_severity")
           ```
           The optional _order_ should be one of "asc" or "desc". If
           omitted, the order defaults to "asc".
@@ -3424,6 +3366,41 @@ components:
               All CVSS3 scores from the advisory for the given vulnerability.
               May include several, varying by minor version of the CVSS3 vector.
       description: Summary of information from this advisory regarding a single specific vulnerability.
+    AnalysisAdvisory:
+      allOf:
+      - $ref: '#/components/schemas/AdvisoryHead'
+      - type: object
+        required:
+        - scores
+        properties:
+          scores:
+            type: array
+            items:
+              $ref: '#/components/schemas/Score'
+            description: CVSS scores
+    AnalysisDetails:
+      allOf:
+      - $ref: '#/components/schemas/VulnerabilityHead'
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: object
+            description: |-
+              Map of status to advisories
+
+              Allowed status values:
+              - `affected`: Advisories that affect the package
+              - `under_investigation`: Advisories that might affect the package, but the investigation is still ongoing
+
+              Additional status values may be added in the future; see API documentation for details.
+            additionalProperties:
+              type: array
+              items:
+                $ref: '#/components/schemas/AnalysisAdvisory'
+            propertyNames:
+              type: string
     AnalysisRequest:
       type: object
       required:
@@ -3436,11 +3413,23 @@ components:
     AnalysisResponse:
       type: object
       additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/VulnerabilityDetails'
+        $ref: '#/components/schemas/AnalysisResult'
       propertyNames:
         type: string
+    AnalysisResult:
+      type: object
+      required:
+      - details
+      - warnings
+      properties:
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalysisDetails'
+        warnings:
+          type: array
+          items:
+            type: string
     AnalysisStatus:
       type: object
       required:
@@ -3769,6 +3758,7 @@ components:
       required:
       - format
       - packages
+      - warnings
       properties:
         format:
           $ref: '#/components/schemas/Format'
@@ -3780,6 +3770,11 @@ components:
             $ref: '#/components/schemas/ExtractPackage'
           propertyNames:
             type: string
+        warnings:
+          type: array
+          items:
+            type: string
+          description: warnings while parsing
     Format:
       type: string
       enum:
@@ -5020,6 +5015,36 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/SbomPackage'
+    Score:
+      type: object
+      required:
+      - type
+      - value
+      - severity
+      properties:
+        severity:
+          $ref: '#/components/schemas/Severity'
+          description: The derived severity
+        type:
+          $ref: '#/components/schemas/ScoreType'
+          description: The score type
+        value:
+          type: number
+          format: double
+          description: The actual value
+    ScoreType:
+      type: string
+      description: The type of score, indicating the scoring system and version used.
+      enum:
+      - '2.0'
+      - '3.0'
+      - '3.1'
+      - '4.0'
+      x-enum-descriptions:
+      - CVSS v2.0 score
+      - CVSS v3.0 score
+      - CVSS v3.1 score
+      - CVSS v4.0 score
     Severity:
       type: string
       description: |-
@@ -5223,6 +5248,7 @@ components:
             - 'null'
             format: double
             description: Average (arithmetic mean) score of the vulnerability aggregated from *all* related advisories.
+            deprecated: true
           average_severity:
             oneOf:
             - type: 'null'
