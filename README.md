@@ -12,7 +12,7 @@ Trustify UI Component
 
 | branch | last merge e2e CI | nightly e2e CI |
 | :----- | :---------------- | :------------- |
-| main   | [![CI (global Trustify CI)](https://github.com/trustification/trustify-ui/actions/workflows/ci-global.yaml/badge.svg?branch=main&event=push)](https://github.com/trustification/trustify-ui/actions/workflows/ci-global.yaml?query=branch%3Amain+event%3Apush)               | [![Nightly CI (global trustify CI @main)](https://github.com/trustification/trustify-ui/actions/workflows/nightly-ci-global.yaml/badge.svg?branch=main&event=schedule)](https://github.com/trustification/trustify-ui/actions/workflows/nightly-ci-global.yaml?query=branch%3Amain+event%3Aschedule)            |
+| main   | [![CI (e2e Trustify CI)](https://github.com/trustification/trustify-ui/actions/workflows/ci-e2e.yaml/badge.svg?branch=main&event=push)](https://github.com/trustification/trustify-ui/actions/workflows/ci-e2e.yaml?query=branch%3Amain+event%3Apush)               | [![Nightly CI (e2e trustify CI @main)](https://github.com/trustification/trustify-ui/actions/workflows/nightly-ci-e2e.yaml/badge.svg?branch=main&event=schedule)](https://github.com/trustification/trustify-ui/actions/workflows/nightly-ci-e2e.yaml?query=branch%3Amain+event%3Aschedule)            |
 
 ## Development
 
@@ -36,7 +36,7 @@ It will start the backend in http://localhost:8080
 ### Install dependencies
 
 ```shell
-npm clean-install --ignore-scripts
+npm ci
 ```
 
 ### Init the dev server
@@ -44,13 +44,6 @@ npm clean-install --ignore-scripts
 ```shell
 npm run start:dev
 ```
-
-> Known issue: after installing the dependencies for the first time and then executing `npm run start:dev` you will see
-> an error
-> `config/webpack.dev.ts(18,8): error TS2307: Cannot find module '@trustify-ui/common' or its corresponding type declarations`
-> Stop the command with Ctrl+C and run the command `npm run start:dev` again and the error should be gone. This only
-> happens the very first time we install dependencies in a clean environment, subsequent commands `npm run start:dev`
-> should not give that error. (bug under investigation)
 
 Open browser at <http://localhost:3000>
 
